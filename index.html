@@ -1,52 +1,651 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Döviz Çevirici</title>
-    <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 30px; border-radius: 20px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
-        input, select, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; background: #334155; color: white; }
-        button { background: #e9455c; cursor: pointer; font-weight: bold; }
-        #sonuc { font-size: 1.5em; color: #818cf8; margin-top: 20px; font-weight: bold; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kur Akışı — Canlı Döviz Çevirici</title>
+<meta name="description" content="TL, Dolar, Euro, Ruble ve daha fazla para birimi arasında anında, ücretsiz ve anahtarsız çeviri." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #0b0f1a;
+    --ink-2: #121a2b;
+    --ink-3: #1a2338;
+    --paper: #f3ecd9;
+    --paper-dim: #d9d0b8;
+    --gold: #c9a227;
+    --gold-soft: #e6c35a;
+    --teal: #2c8079;
+    --teal-dim: #1c5450;
+    --rust: #b1512f;
+    --text: #ece6d6;
+    --text-dim: #9aa1b8;
+    --line: rgba(201,162,39,0.22);
+    --shadow: rgba(0,0,0,0.45);
+    --radius: 18px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    overflow-x: hidden;
+  }
+  ::selection{ background: var(--gold); color: var(--ink); }
+
+  h1,h2,h3, .display{
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .mono{ font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Background: engraved guilloché texture ---------- */
+  .bg-field{
+    position: fixed;
+    inset: -10vmax;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    animation: bgdrift 34s cubic-bezier(.45,0,.55,1) infinite;
+    background:
+      radial-gradient(ellipse at 20% 15%, rgba(44,128,121,0.16), transparent 45%),
+      radial-gradient(ellipse at 82% 78%, rgba(201,162,39,0.12), transparent 50%);
+  }
+  .bg-field svg{ width: 100%; height: 100%; animation: bgbreathe 12s ease-in-out infinite; transform-origin: 50% 50%; }
+  @keyframes bgdrift{
+    0%{ transform: rotate(0deg) scale(1); }
+    50%{ transform: rotate(3deg) scale(1.04); }
+    100%{ transform: rotate(0deg) scale(1); }
+  }
+  @keyframes bgbreathe{
+    0%, 100%{ opacity: 0.85; }
+    50%{ opacity: 1; }
+  }
+  .grain{
+    position: fixed; inset:0; z-index: 1; pointer-events:none;
+    opacity: 0.035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap{ position: relative; z-index: 2; max-width: 1080px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- Header ---------- */
+  header{ padding: 40px 0 20px; display:flex; align-items:center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand{ display:flex; align-items:center; gap: 14px; }
+  .brand .mark{
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 1.5px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--gold); font-family:'Fraunces',serif; font-weight:700; font-size: 19px;
+    background: radial-gradient(circle at 30% 30%, rgba(201,162,39,0.18), transparent 70%);
+  }
+  .brand .name{ font-size: 22px; }
+  .brand .name span{ color: var(--gold); }
+  .brand .tagline{ font-size: 12.5px; color: var(--text-dim); margin-top: 2px; }
+  .status-pill{
+    display:flex; align-items:center; gap:8px;
+    font-size: 12.5px; color: var(--text-dim);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 14px; background: rgba(255,255,255,0.02);
+  }
+  .pulse-dot{
+    width:8px; height:8px; border-radius:50%; background: var(--teal);
+    box-shadow: 0 0 0 0 rgba(44,128,121,0.6);
+    animation: pulse 2s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow: 0 0 0 0 rgba(44,128,121,0.55); }
+    70%{ box-shadow: 0 0 0 8px rgba(44,128,121,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(44,128,121,0); }
+  }
+
+  /* ---------- Entrance choreography ---------- */
+  @keyframes riseIn{
+    from{ opacity: 0; transform: translateY(22px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  .rise-in{ animation: riseIn 0.85s cubic-bezier(.16,1,.3,1) both; }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding: 30px 0 10px; text-align:center; }
+  .hero h1{ font-size: clamp(34px, 5.5vw, 56px); line-height: 1.05; }
+  .hero .sub{ color: var(--text-dim); font-size: 16px; margin-top: 14px; max-width: 520px; margin-inline:auto; }
+
+  .flow-line{ width: 220px; height: 22px; margin: 22px auto 0; opacity: 0.85; filter: drop-shadow(0 0 3px rgba(201,162,39,0.35)); }
+  .flow-line path{
+    stroke: var(--gold); stroke-width: 1.4; fill:none;
+    stroke-dasharray: 6 7;
+    animation: flowmove 3.2s linear infinite, flowglow 2.6s ease-in-out infinite;
+  }
+  @keyframes flowmove{ to{ stroke-dashoffset: -130; } }
+  @keyframes flowglow{
+    0%, 100%{ opacity: 0.65; }
+    50%{ opacity: 1; }
+  }
+
+  /* ---------- Converter card ---------- */
+  .converter{
+    margin: 44px auto 0;
+    max-width: 620px;
+    background: linear-gradient(180deg, var(--ink-2), var(--ink-3));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 34px 30px 28px;
+    box-shadow: 0 30px 60px -20px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+    animation: riseIn 0.9s cubic-bezier(.16,1,.3,1) both 0.15s, cardGlow 6s ease-in-out infinite 1s;
+  }
+  @keyframes cardGlow{
+    0%, 100%{ box-shadow: 0 30px 60px -20px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 rgba(201,162,39,0); }
+    50%{ box-shadow: 0 30px 60px -20px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 32px -4px rgba(201,162,39,0.16); }
+  }
+  .converter::before{
+    content:"";
+    position:absolute; inset: 8px;
+    border: 1px solid rgba(201,162,39,0.14);
+    border-radius: calc(var(--radius) - 6px);
+    pointer-events:none;
+  }
+  .field-label{
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--text-dim); margin-bottom: 8px; display:block;
+  }
+  .amount-row{ margin-bottom: 18px; }
+  .amount-row input{
+    width: 100%; background: rgba(0,0,0,0.22); border: 1px solid var(--line);
+    border-radius: 12px; padding: 15px 16px; color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .amount-row input:focus{ border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,39,0.14); }
+
+  .swap-grid{
+    display:grid; grid-template-columns: 1fr 52px 1fr; gap: 12px; align-items: end;
+  }
+  .curr-field select{
+    width: 100%; appearance: none; -webkit-appearance:none;
+    background: rgba(0,0,0,0.22) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a227' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 15px 34px 15px 14px; color: var(--text); font-size: 15px;
+    cursor:pointer; outline:none; transition: border-color 0.2s;
+  }
+  .curr-field select:focus{ border-color: var(--gold); }
+  .curr-field select option{ background: var(--ink-2); color: var(--text); }
+
+  .swap-btn{
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 1px solid var(--gold); background: rgba(201,162,39,0.08);
+    color: var(--gold); font-size: 18px; cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform 0.5s cubic-bezier(.34,1.56,.64,1), background 0.2s, box-shadow 0.3s;
+  }
+  .swap-btn:hover{ background: rgba(201,162,39,0.18); box-shadow: 0 0 0 6px rgba(201,162,39,0.06); }
+  .swap-btn:active{ transform: scale(0.9); }
+  .swap-btn.spin{ transform: rotate(180deg) scale(1.08); }
+
+  .result-box{
+    margin-top: 26px; padding: 24px 22px;
+    background: radial-gradient(120% 140% at 0% 0%, rgba(44,128,121,0.14), transparent 60%), rgba(0,0,0,0.18);
+    border: 1px solid var(--line); border-radius: 14px;
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap: wrap; gap: 10px;
+  }
+  .result-value{ font-size: clamp(28px, 6vw, 40px); color: var(--paper); font-weight:600; }
+  .result-code{ font-size: 15px; color: var(--gold-soft); margin-left: 8px; }
+  .rate-note{ font-size: 12.5px; color: var(--text-dim); width: 100%; }
+
+  .meta-row{ display:flex; justify-content: space-between; align-items:center; margin-top: 18px; flex-wrap: wrap; gap: 10px; }
+  .updated-at{ font-size: 12px; color: var(--text-dim); }
+  .refresh-btn{
+    font-size: 12.5px; color: var(--gold); background: none; border: 1px solid var(--line);
+    border-radius: 999px; padding: 7px 14px; cursor: pointer; display:flex; gap:6px; align-items:center;
+    transition: border-color .2s, color .2s;
+  }
+  .refresh-btn:hover{ border-color: var(--gold); }
+  .refresh-btn svg{ width:13px; height:13px; transition: transform 0.6s; }
+  .refresh-btn.spinning svg{ transform: rotate(360deg); }
+
+  /* ---------- Ticker ---------- */
+  .ticker-section{ margin-top: 74px; }
+  .section-head{ display:flex; align-items:center; gap: 10px; margin-bottom: 18px; }
+  .section-head h2{ font-size: 15px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-dim); font-family:'Inter'; font-weight:600; }
+
+  .ticker-mask{
+    position: relative; overflow:hidden;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 16px 0;
+    mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+  }
+  .ticker-track{
+    display:flex; gap: 46px; width: max-content;
+    animation: ticker 38s linear infinite;
+  }
+  .ticker-mask:hover .ticker-track{ animation-play-state: paused; }
+  @keyframes ticker{ from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
+  .ticker-item{ display:flex; align-items: baseline; gap: 8px; white-space: nowrap; font-size: 15px; padding: 4px 8px; border-radius: 8px; transition: background 0.25s, transform 0.25s; }
+  .ticker-item:hover{ background: rgba(201,162,39,0.08); transform: translateY(-1px); }
+  .ticker-item .code{ color: var(--gold-soft); font-weight: 600; }
+  .ticker-item .val{ color: var(--paper); }
+  .ticker-item .lbl{ color: var(--text-dim); font-size: 12px; }
+
+  /* ---------- Popular grid ---------- */
+  .grid-section{ margin-top: 66px; }
+  .pop-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pop-card{
+    background: linear-gradient(160deg, var(--ink-2), var(--ink-3));
+    border: 1px solid var(--line); border-radius: 14px; padding: 20px;
+    transition: transform 0.4s cubic-bezier(.2,.8,.3,1), border-color 0.3s, box-shadow 0.4s;
+    opacity: 0; animation: riseIn 0.7s cubic-bezier(.16,1,.3,1) both;
+  }
+  .pop-card:hover{ transform: translateY(-5px) scale(1.015); border-color: var(--gold); box-shadow: 0 18px 34px -18px rgba(201,162,39,0.35); }
+  .pop-card .pair{ font-size: 12.5px; color: var(--text-dim); margin-bottom: 10px; letter-spacing: 0.04em; }
+  .pop-card .value{ font-size: 24px; color: var(--paper); font-weight: 600; }
+  .pop-card .value small{ font-size: 13px; color: var(--gold-soft); font-weight:500; margin-left: 4px; }
+
+  /* ---------- Ad slots (Adsterra) ---------- */
+  .ad-slot{
+    margin: 46px auto 0;
+    max-width: 728px;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.015);
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    min-height: 90px;
+    padding: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ad-slot::before{
+    content: attr(data-label);
+    font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); position:absolute; top: 8px; left: 12px; opacity: 0.6;
+  }
+  .ad-slot .ad-placeholder-text{
+    font-size: 12px; color: var(--text-dim); opacity: 0.55; padding-top: 10px;
+  }
+  .ad-slot--native{ max-width: 1080px; min-height: 120px; }
+
+  /* ---------- Footer ---------- */
+  footer{ margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--line); text-align:center; }
+  footer p{ font-size: 12.5px; color: var(--text-dim); max-width: 560px; margin: 6px auto; line-height: 1.6; }
+  footer a{ color: var(--gold-soft); text-decoration: none; }
+  footer a:hover{ text-decoration: underline; }
+
+  .skeleton{ position: relative; overflow:hidden; color: transparent !important; border-radius: 6px; background: rgba(255,255,255,0.05); }
+  .skeleton::after{
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(100deg, transparent 30%, rgba(201,162,39,0.14) 50%, transparent 70%);
+    animation: shimmer 1.4s linear infinite;
+  }
+  @keyframes shimmer{ from{ transform: translateX(-100%);} to{ transform: translateX(100%);} }
+
+  @media (max-width: 640px){
+    .swap-grid{ grid-template-columns: 1fr; }
+    .swap-btn{ justify-self:center; transform: rotate(90deg); }
+    .swap-btn.spin{ transform: rotate(270deg); }
+    .pop-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 420px){
+    .pop-grid{ grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+    .bg-field, .bg-field svg{ animation: none; }
+    .ticker-track{ animation: none; }
+    .pop-card{ opacity: 1; }
+  }
+</style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Döviz Çevirici</h2>
-    <input type="number" id="miktar" value="1">
-    <select id="from"><option value="USD">USD</option><option value="EUR">EUR</option><option value="TRY">TRY</option></select>
-    <select id="to"><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
-    <button onclick="cevir()">HESAPLA</button>
-    <div id="sonuc">Sonuç bekleniyor...</div>
+<div class="bg-field" aria-hidden="true">
+  <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#c9a227" stroke-width="0.6">
+      <path d="M-100 200 C 100 100 200 300 400 200 S 700 100 900 200" opacity="0.5"/>
+      <path d="M-100 260 C 100 160 200 360 400 260 S 700 160 900 260" opacity="0.4"/>
+      <path d="M-100 320 C 100 220 200 420 400 320 S 700 220 900 320" opacity="0.3"/>
+    </g>
+    <g fill="none" stroke="#2c8079" stroke-width="0.6">
+      <path d="M-100 520 C 100 620 200 420 400 520 S 700 620 900 520" opacity="0.45"/>
+      <path d="M-100 580 C 100 680 200 480 400 580 S 700 680 900 580" opacity="0.35"/>
+      <path d="M-100 640 C 100 740 200 540 400 640 S 700 740 900 640" opacity="0.25"/>
+    </g>
+    <circle cx="400" cy="400" r="220" fill="none" stroke="#c9a227" stroke-width="0.4" opacity="0.25"/>
+    <circle cx="400" cy="400" r="260" fill="none" stroke="#c9a227" stroke-width="0.4" opacity="0.18"/>
+    <circle cx="400" cy="400" r="300" fill="none" stroke="#2c8079" stroke-width="0.4" opacity="0.14"/>
+  </svg>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="mark">₺</div>
+      <div>
+        <div class="name">Kur <span>Akışı</span></div>
+        <div class="tagline">Canlı döviz çevirici</div>
+      </div>
+    </div>
+    <div class="status-pill"><span class="pulse-dot"></span> <span id="statusText">Kurlar yükleniyor…</span></div>
+  </header>
+
+  <section class="hero">
+    <h1 class="rise-in">Parayı diline çevir.</h1>
+    <p class="sub rise-in" style="animation-delay:.08s">TL, Dolar, Euro, Ruble ve 30'un üzerinde para birimi arasında anında, ücretsiz ve anahtarsız çeviri yapın.</p>
+    <svg class="flow-line" viewBox="0 0 220 22" aria-hidden="true">
+      <path d="M0 11 H220" />
+    </svg>
+
+    <div class="converter">
+      <div class="amount-row">
+        <label class="field-label" for="amountInput">Miktar</label>
+        <input id="amountInput" type="text" inputmode="decimal" value="100" autocomplete="off" />
+      </div>
+
+      <div class="swap-grid">
+        <div class="curr-field">
+          <label class="field-label" for="fromSelect">Kimden</label>
+          <select id="fromSelect"></select>
+        </div>
+        <button class="swap-btn" id="swapBtn" aria-label="Para birimlerini değiştir" title="Değiştir">⇄</button>
+        <div class="curr-field">
+          <label class="field-label" for="toSelect">Kime</label>
+          <select id="toSelect"></select>
+        </div>
+      </div>
+
+      <div class="result-box">
+        <div>
+          <span class="result-value mono skeleton" id="resultValue">0,00</span>
+          <span class="result-code" id="resultCode">TRY</span>
+        </div>
+        <div class="rate-note" id="rateNote">Kur bilgisi bekleniyor…</div>
+      </div>
+
+      <div class="meta-row">
+        <span class="updated-at" id="updatedAt">—</span>
+        <button class="refresh-btn" id="refreshBtn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 10a7 7 0 1 1-2.1-5M17 3v4h-4"/></svg>
+          Kurları yenile
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADSTERRA — Banner (728x90 / responsive) reklam alanı.
+       Adsterra panelinden aldığın "Banner" kodunu (atOptions + invoke.js <script> etiketleri)
+       bu div'in İÇİNE yapıştır. Şu an sadece yer tutucu görünüyor. -->
+  <div class="ad-slot" data-label="Reklam">
+    <div id="ad-slot-banner">
+      <!-- Örnek:
+      <script type="text/javascript">
+        atOptions = { key: 'BURAYA-ADSTERRA-KEY', format: 'iframe', height: 90, width: 728, params: {} };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/BURAYA-ADSTERRA-KEY/invoke.js"></script>
+      -->
+      <span class="ad-placeholder-text">Reklam alanı — Adsterra kodu buraya eklenecek</span>
+    </div>
+  </div>
+
+  <section class="ticker-section">
+    <div class="section-head"><span class="pulse-dot"></span><h2>Canlı Kur Şeridi</h2></div>
+    <div class="ticker-mask">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+  </section>
+
+  <!-- ADSTERRA — Native Banner reklam alanı.
+       Adsterra panelinden "Native Banner" kodunu bu div'in içine yapıştır. -->
+  <div class="ad-slot ad-slot--native" data-label="Reklam">
+    <div id="ad-slot-native">
+      <!-- Örnek:
+      <script async="async" data-cfasync="false" src="//BURAYA-ADSTERRA-NATIVE-SCRIPT-URL"></script>
+      <div id="container-BURAYA-CONTAINER-ID"></div>
+      -->
+      <span class="ad-placeholder-text">Reklam alanı — Adsterra native banner kodu buraya eklenecek</span>
+    </div>
+  </div>
+
+  <section class="grid-section">
+    <div class="section-head"><h2>Popüler Çevrimler</h2></div>
+    <div class="pop-grid" id="popGrid"></div>
+  </section>
+
+  <footer>
+    <p>Kur verileri <a href="https://github.com/fawazahmed0/exchange-api" target="_blank" rel="noopener">açık kaynaklı, ücretsiz bir döviz kuru API'sinden</a> alınır — anahtar gerekmez, sınırsızdır. Veriler günde bir kez güncellenir; yatırım tavsiyesi niteliği taşımaz.</p>
+  </footer>
+
 </div>
 
 <script>
-    async function cevir() {
-        const miktar = document.getElementById('miktar').value;
-        const from = document.getElementById('from').value;
-        const to = document.getElementById('to').value;
-        const sonucDiv = document.getElementById('sonuc');
+(function(){
+  const CURRENCIES = [
+    ["TRY","🇹🇷","Türk Lirası"],
+    ["USD","🇺🇸","Amerikan Doları"],
+    ["EUR","🇪🇺","Euro"],
+    ["RUB","🇷🇺","Rus Rublesi"],
+    ["GBP","🇬🇧","İngiliz Sterlini"],
+    ["JPY","🇯🇵","Japon Yeni"],
+    ["CHF","🇨🇭","İsviçre Frangı"],
+    ["CNY","🇨🇳","Çin Yuanı"],
+    ["AED","🇦🇪","BAE Dirhemi"],
+    ["AUD","🇦🇺","Avustralya Doları"],
+    ["CAD","🇨🇦","Kanada Doları"],
+    ["SEK","🇸🇪","İsveç Kronu"],
+    ["NOK","🇳🇴","Norveç Kronu"],
+    ["DKK","🇩🇰","Danimarka Kronu"],
+    ["PLN","🇵🇱","Polonya Zlotisi"],
+    ["CZK","🇨🇿","Çek Korunası"],
+    ["HUF","🇭🇺","Macar Forinti"],
+    ["RON","🇷🇴","Rumen Leyi"],
+    ["BGN","🇧🇬","Bulgar Levası"],
+    ["UAH","🇺🇦","Ukrayna Grivnası"],
+    ["KRW","🇰🇷","Güney Kore Wonu"],
+    ["INR","🇮🇳","Hindistan Rupisi"],
+    ["BRL","🇧🇷","Brezilya Reali"],
+    ["MXN","🇲🇽","Meksika Pesosu"],
+    ["ZAR","🇿🇦","Güney Afrika Randı"],
+    ["SAR","🇸🇦","Suudi Riyali"],
+    ["QAR","🇶🇦","Katar Riyali"],
+    ["KWD","🇰🇼","Kuveyt Dinarı"],
+    ["ILS","🇮🇱","İsrail Şekeli"],
+    ["AZN","🇦🇿","Azerbaycan Manatı"],
+    ["GEL","🇬🇪","Gürcistan Larisi"],
+    ["KZT","🇰🇿","Kazakistan Tengesi"]
+  ];
+  const TICKER_CODES = ["USD","EUR","RUB","GBP","CHF","CNY","AED","AZN","GEL","AUD","JPY","CAD"];
+  const POPULAR_PAIRS = [
+    ["USD","TRY"], ["EUR","TRY"], ["RUB","TRY"],
+    ["GBP","TRY"], ["TRY","USD"], ["TRY","EUR"]
+  ];
 
-        sonucDiv.innerText = "Yükleniyor...";
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fromSelect = document.getElementById('fromSelect');
+  const toSelect = document.getElementById('toSelect');
+  const amountInput = document.getElementById('amountInput');
+  const resultValue = document.getElementById('resultValue');
+  const resultCode = document.getElementById('resultCode');
+  const rateNote = document.getElementById('rateNote');
+  const updatedAt = document.getElementById('updatedAt');
+  const statusText = document.getElementById('statusText');
+  const swapBtn = document.getElementById('swapBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const tickerTrack = document.getElementById('tickerTrack');
+  const popGrid = document.getElementById('popGrid');
 
-        try {
-            // Yeni ve çok daha kararlı API servisi
-            const res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
-            const data = await res.json();
-            
-            if (data.result === "success") {
-                const kur = data.rates[to];
-                const toplam = (miktar * kur).toFixed(2);
-                sonucDiv.innerHTML = `${toplam} ${to}`;
-            } else {
-                sonucDiv.innerText = "API Hatası!";
-            }
-        } catch (e) {
-            sonucDiv.innerText = "Bağlantı başarısız.";
-        }
+  let rates = null;       // TRY -> X rates
+  let lastValue = 0;
+
+  function fillSelect(select, defaultCode){
+    select.innerHTML = CURRENCIES.map(([code, flag, name]) =>
+      `<option value="${code}" ${code===defaultCode ? 'selected':''}>${flag} ${code} — ${name}</option>`
+    ).join('');
+  }
+  fillSelect(fromSelect, 'USD');
+  fillSelect(toSelect, 'TRY');
+
+  function fmt(n){
+    const abs = Math.abs(n);
+    const maxFrac = abs >= 100 ? 2 : abs >= 1 ? 4 : 6;
+    return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: maxFrac });
+  }
+
+  // rate(from -> to) using TRY as pivot base. API keys are lowercase (e.g. "usd", "rub").
+  function pairRate(from, to){
+    if(!rates) return null;
+    if(from === to) return 1;
+    const f = from.toLowerCase();
+    const t = to.toLowerCase();
+    const fromToTry = from === 'TRY' ? 1 : 1 / rates[f];
+    const tryToTarget = to === 'TRY' ? 1 : rates[t];
+    return fromToTry * tryToTarget;
+  }
+
+  function animateTo(el, endValue, code){
+    if(reduceMotion){ el.textContent = fmt(endValue); el.classList.remove('skeleton'); return; }
+    el.classList.remove('skeleton');
+    const start = lastValue;
+    const startTime = performance.now();
+    const duration = 650;
+    function tick(now){
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = start + (endValue - start) * eased;
+      el.textContent = fmt(current);
+      if(t < 1) requestAnimationFrame(tick);
+      else { el.textContent = fmt(endValue); lastValue = endValue; }
     }
+    requestAnimationFrame(tick);
+  }
+
+  // Parses "100", "100.5", "100,5", "1.234,56" and "1,234.56" all correctly by
+  // treating whichever separator appears LAST as the decimal point.
+  function parseLocaleNumber(str){
+    str = (str || '').trim();
+    if(!str) return NaN;
+    const lastComma = str.lastIndexOf(',');
+    const lastDot = str.lastIndexOf('.');
+    let decimalSep = null;
+    if(lastComma > lastDot) decimalSep = ',';
+    else if(lastDot > lastComma) decimalSep = '.';
+    if(decimalSep){
+      const thousandSep = decimalSep === ',' ? '.' : ',';
+      str = str.split(thousandSep).join('');
+      str = str.replace(decimalSep, '.');
+    } else {
+      str = str.replace(/[.,]/g, '');
+    }
+    return parseFloat(str);
+  }
+
+  function convert(){
+    if(!rates) return;
+    const from = fromSelect.value;
+    const to = toSelect.value;
+    const amount = parseLocaleNumber(amountInput.value);
+    const rate = pairRate(from, to);
+    if(isNaN(amount) || rate === null){
+      resultValue.textContent = '—';
+      return;
+    }
+    const result = amount * rate;
+    animateTo(resultValue, result, to);
+    resultCode.textContent = to;
+    rateNote.textContent = `1 ${from} = ${fmt(rate)} ${to}`;
+  }
+
+  function renderTicker(){
+    const items = TICKER_CODES.map(code => {
+      const info = CURRENCIES.find(c => c[0] === code);
+      const rate = pairRate(code, 'TRY');
+      return `<div class="ticker-item"><span class="code">${info[1]} ${code}</span><span class="val mono">${fmt(rate)}</span><span class="lbl">TRY</span></div>`;
+    }).join('');
+    tickerTrack.innerHTML = items + items; // duplicate for seamless loop
+  }
+
+  function renderPopular(){
+    popGrid.innerHTML = POPULAR_PAIRS.map(([from,to], i) => {
+      const rate = pairRate(from, to);
+      const fromInfo = CURRENCIES.find(c => c[0] === from);
+      const toInfo = CURRENCIES.find(c => c[0] === to);
+      return `<div class="pop-card" style="animation-delay:${i * 60}ms">
+        <div class="pair">${fromInfo[1]} 1 ${from} ➜ ${toInfo[1]} ${to}</div>
+        <div class="value mono">${fmt(rate)}<small>${to}</small></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Primary + fallback: both are free, keyless, and CORS-enabled (unlike some "open" APIs
+  // that block browser requests entirely). Data is the same feed served from two CDNs.
+  const SOURCES = [
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/try.json',
+    'https://latest.currency-api.pages.dev/v1/currencies/try.json'
+  ];
+
+  async function loadRates(){
+    statusText.textContent = 'Kurlar yükleniyor…';
+    refreshBtn.classList.add('spinning');
+    let data = null;
+    let lastErr = null;
+    for(const url of SOURCES){
+      try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        data = await res.json();
+        break;
+      }catch(err){ lastErr = err; }
+    }
+    try{
+      if(!data || !data.try) throw lastErr || new Error('Veri alınamadı');
+      rates = data.try; // lowercase currency codes -> rate from 1 TRY
+      const dt = new Date(data.date + 'T00:00:00Z');
+      updatedAt.textContent = 'Güncellendi: ' + new Intl.DateTimeFormat('tr-TR', { dateStyle:'medium' }).format(dt);
+      statusText.textContent = 'Kurlar güncel';
+      convert();
+      renderTicker();
+      renderPopular();
+    }catch(err){
+      statusText.textContent = 'Kurlar alınamadı, tekrar deneyin';
+      rateNote.textContent = 'Bağlantı hatası — lütfen yenile düğmesine basın.';
+    }finally{
+      refreshBtn.classList.remove('spinning');
+    }
+  }
+
+  swapBtn.addEventListener('click', () => {
+    swapBtn.classList.toggle('spin');
+    const f = fromSelect.value;
+    fromSelect.value = toSelect.value;
+    toSelect.value = f;
+    convert();
+  });
+  refreshBtn.addEventListener('click', loadRates);
+  fromSelect.addEventListener('change', convert);
+  toSelect.addEventListener('change', convert);
+  amountInput.addEventListener('input', convert);
+
+  loadRates();
+})();
 </script>
+
+<!-- ADSTERRA — Social Bar / Popunder script.
+     Bu tür reklamlar bir kapsayıcı div gerektirmez; Adsterra panelinden verilen
+     <script> etiketini olduğu gibi, aşağıdaki yoruma bu satırın hemen altına yapıştırman yeterli.
+     (Şu an devre dışı — yorum işaretlerini kaldırıp kodu ekleyince aktif olur.)
+<script type="text/javascript" src="//BURAYA-ADSTERRA-SOCIAL-BAR-VEYA-POPUNDER-SCRIPT-URL"></script>
+-->
+
 </body>
 </html>
