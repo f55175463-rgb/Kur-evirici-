@@ -1,54 +1,122 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" id="html-lang">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Kur Akışı — Canlı Döviz Çevirici</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<title id="page-title">Kur Akışı — Canlı Döviz Çevirici</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --ink: #0b0f1a; --ink-2: #121a2b; --ink-3: #1a2338; --paper: #f3ecd9; --gold: #c9a227; --text: #ece6d6; --text-dim: #9aa1b8; --line: rgba(201,162,39,0.22); --radius: 18px; }
-  body{ margin:0; background: var(--ink); color: var(--text); font-family: 'Inter', sans-serif; overflow-x: hidden; }
-  .wrap{ max-width: 1080px; margin: 0 auto; padding: 40px 24px; text-align: center; }
+  :root { 
+    --ink: #0b0f1a; 
+    --paper: #ffffff; 
+    --gold: #00f0ff; /* Neon Mavi/Cyan vibe */
+    --gold-glow: rgba(0, 240, 255, 0.4);
+    --pink: #ff0055;
+    --text: #ece6d6; 
+    --text-dim: #9aa1b8; 
+    --line: rgba(255,255,255,0.1); 
+    --radius: 24px; 
+  }
+  
+  body { 
+    margin: 0; 
+    background: var(--ink); 
+    color: var(--text); 
+    font-family: 'Inter', sans-serif; 
+    overflow-x: hidden; 
+    min-height: 100vh;
+  }
+
+  /* --- HAREKETLİ NEON ARKA PLAN --- */
+  .bg-animation {
+    position: fixed;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.08), transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 85, 0.08), transparent 40%);
+    animation: rotateBg 20s linear infinite;
+    z-index: -1;
+  }
+  @keyframes rotateBg { 100% { transform: rotate(360deg); } }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px; text-align: center; position: relative; z-index: 1; }
   
   /* --- ANİMASYONLAR --- */
-  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes pulseGlow { 0% { box-shadow: 0 0 10px rgba(201,162,39,0.1); } 50% { box-shadow: 0 0 30px rgba(201,162,39,0.4); } 100% { box-shadow: 0 0 10px rgba(201,162,39,0.1); } }
+  @keyframes slideUp { 0% { opacity: 0; transform: translateY(40px) scale(0.95); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes pulseGlow { 0% { box-shadow: 0 0 15px var(--gold-glow), inset 0 0 10px rgba(255,255,255,0.05); } 100% { box-shadow: 0 0 40px var(--gold-glow), inset 0 0 20px rgba(255,255,255,0.1); } }
   
-  header h1 { animation: slideUp 0.8s ease-out; font-size: 36px; margin-bottom: 5px; }
-  header p { animation: slideUp 1s ease-out; color: var(--text-dim); margin-top: 0; }
+  header h1 { animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); font-size: 42px; font-weight: 800; margin-bottom: 5px; background: -webkit-linear-gradient(45deg, var(--gold), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(0,240,255,0.3)); }
+  header p { animation: slideUp 1s cubic-bezier(0.2, 0.8, 0.2, 1); color: var(--text-dim); margin-top: 0; font-size: 16px; letter-spacing: 1px; }
   
-  /* --- ÇEVİRİCİ KUTUSU --- */
-  .converter{ background: linear-gradient(180deg, var(--ink-2), var(--ink-3)); border: 1px solid var(--line); border-radius: var(--radius); padding: 34px; max-width: 500px; margin: 30px auto; animation: slideUp 1s ease-out, pulseGlow 3s infinite alternate; transition: transform 0.3s; }
-  .converter:hover { transform: scale(1.02); }
+  /* --- CAM EFEKTLİ (GLASSMORPHISM) ÇEVİRİCİ --- */
+  .converter { 
+    background: rgba(20, 25, 40, 0.6); 
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-top: 1px solid rgba(255,255,255,0.2);
+    border-radius: var(--radius); 
+    padding: 40px; 
+    max-width: 500px; 
+    margin: 40px auto; 
+    animation: slideUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), pulseGlow 4s infinite alternate; 
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+  }
+  .converter:hover { transform: translateY(-5px); }
   
-  .amount-row input{ width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 12px; padding: 15px; color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 26px; outline: none; transition: 0.3s; text-align: center; }
-  .amount-row input:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(201,162,39,0.3); }
+  .amount-row input { 
+    width: 100%; background: rgba(0,0,0,0.4); border: 2px solid var(--line); 
+    border-radius: 16px; padding: 18px; color: var(--paper); 
+    font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 700;
+    outline: none; transition: all 0.3s ease; text-align: center; 
+  }
+  .amount-row input:focus { border-color: var(--gold); box-shadow: 0 0 20px var(--gold-glow); transform: scale(1.02); }
   
-  .swap-grid{ display:grid; grid-template-columns: 1fr 60px 1fr; gap: 15px; align-items: center; margin: 20px 0; }
-  .curr-field select{ width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 12px; padding: 15px; color: var(--paper); cursor:pointer; text-align: center; font-size: 16px; font-weight: 600; outline: none; transition: 0.3s; }
+  .swap-grid { display:grid; grid-template-columns: 1fr 65px 1fr; gap: 15px; align-items: center; margin: 25px 0; }
+  .curr-field select { 
+    width: 100%; background: rgba(0,0,0,0.4); border: 2px solid var(--line); 
+    border-radius: 16px; padding: 16px; color: var(--paper); cursor:pointer; 
+    text-align: center; font-size: 18px; font-weight: 600; outline: none; transition: 0.3s; 
+    appearance: none;
+  }
   .curr-field select:focus { border-color: var(--gold); }
   
-  /* --- DEĞİŞTİRME BUTONU --- */
-  .swap-btn{ width: 55px; height: 55px; border-radius: 50%; border: 1px solid var(--gold); background: rgba(201,162,39,0.1); color: var(--gold); cursor: pointer; transition: all 0.5s ease; font-size: 22px; display: flex; align-items: center; justify-content: center; }
-  .swap-btn:hover { transform: rotate(180deg); background: rgba(201,162,39,0.3); box-shadow: 0 0 15px rgba(201,162,39,0.5); }
+  .swap-btn { 
+    width: 60px; height: 60px; border-radius: 50%; border: none; 
+    background: linear-gradient(135deg, var(--gold), #0088ff); 
+    color: #fff; cursor: pointer; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+    font-size: 26px; display: flex; align-items: center; justify-content: center; 
+    box-shadow: 0 0 15px var(--gold-glow);
+  }
+  .swap-btn:hover { transform: rotate(180deg) scale(1.15); box-shadow: 0 0 30px var(--gold-glow); }
   
-  .result-box{ padding: 25px; background: rgba(0,0,0,0.25); border: 1px solid var(--line); border-radius: 14px; margin-top: 20px; transition: 0.3s; }
-  #resultValue { font-family: 'IBM Plex Mono', monospace; font-size: 34px; font-weight: 600; color: var(--paper); }
-  #resultCode { font-size: 18px; color: var(--gold); margin-left: 5px; }
+  .result-box { padding: 30px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); border-radius: 18px; margin-top: 25px; transition: 0.3s; position: relative; overflow: hidden;}
+  .result-box::after { content:''; position: absolute; top:0; left:-100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); animation: shine 3s infinite; }
+  @keyframes shine { 100% { left: 200%; } }
+
+  #resultValue { font-family: 'IBM Plex Mono', monospace; font-size: 42px; font-weight: 700; color: var(--paper); text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+  #resultCode { font-size: 20px; color: var(--gold); margin-left: 8px; font-weight: 600; }
   
-  /* --- REKLAM ALANLARI --- */
-  .ad-slot{ margin: 30px auto; max-width: 728px; border: 1px dashed var(--line); border-radius: 14px; min-height: 90px; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.02); animation: slideUp 1.2s ease-out; position: relative; padding: 15px; overflow: hidden; }
-  .ad-slot::before { content: "SPONSORLU"; position: absolute; top: 5px; left: 10px; font-size: 10px; font-weight: bold; letter-spacing: 1px; color: var(--text-dim); }
+  /* --- REKLAM ALANLARI (Estetikleştirilmiş) --- */
+  .ad-slot { 
+    margin: 30px auto; max-width: 728px; border: 1px dashed rgba(255,255,255,0.15); 
+    border-radius: 16px; min-height: 90px; display:flex; align-items:center; justify-content:center; 
+    background: rgba(255,255,255,0.01); animation: slideUp 1.5s ease-out; position: relative; padding: 15px; 
+    backdrop-filter: blur(5px);
+  }
+  .ad-slot::before { content: "SPONSORED"; position: absolute; top: -10px; background: var(--ink); padding: 0 10px; font-size: 10px; font-weight: bold; letter-spacing: 2px; color: var(--text-dim); border-radius: 10px;}
 </style>
 </head>
 <body>
+
+<div class="bg-animation"></div>
+
 <div class="wrap">
   <header>
-    <h1>Kur Akışı 💸</h1>
-    <p>Anlık ve Hızlı Döviz Çevirici</p>
+    <h1 id="title-text">Kur Akışı 💸</h1>
+    <p id="subtitle-text">Anlık ve Hızlı Döviz Çevirici</p>
   </header>
   
-  <!-- 1. ÜST REKLAM ALANI (Banner 300x250) -->
+  <!-- 1. ÜST BANNER (Adsterra) -->
   <div class="ad-slot">
     <script type="text/javascript">
       atOptions = { 'key' : '387e8950129065d36891903404066d18', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
@@ -58,7 +126,7 @@
 
   <div class="converter">
     <div class="amount-row">
-      <input id="amountInput" type="number" value="100" placeholder="Miktar girin..." />
+      <input id="amountInput" type="number" value="100" placeholder="0.00" />
     </div>
     <div class="swap-grid">
       <div class="curr-field">
@@ -70,77 +138,119 @@
       </div>
     </div>
     <div class="result-box">
-      <span id="resultValue">Yükleniyor...</span><span id="resultCode">TRY</span>
+      <span id="resultValue">...</span><span id="resultCode">TRY</span>
     </div>
   </div>
 
-  <!-- 2. ORTA REKLAM ALANI (Native Banner) -->
+  <!-- 2. ORTA NATIVE BANNER (Adsterra) -->
   <div class="ad-slot" style="min-height: 120px; max-width: 900px;">
     <script async="async" data-cfasync="false" src="//pl30393905.effectivecpmnetwork.com/0048a6dafbc34b26744664197b3e96ad/invoke.js"></script>
     <div id="container-0048a6dafbc34b26744664197b3e96ad"></div>
   </div>
-
-  <!-- 3. ALT REKLAM ALANI (Banner 300x250) -->
-  <div class="ad-slot">
-    <script type="text/javascript">
-      atOptions = { 'key' : '387e8950129065d36891903404066d18', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
-    </script>
-    <script type="text/javascript" src="//www.highperformanceformat.com/387e8950129065d36891903404066d18/invoke.js"></script>
-  </div>
-  
 </div>
+
+<!-- ================= REKLAM SCRIPTLERI (GÖRÜNMEZ ALAN) ================= -->
+<!-- 3. SOCIAL BAR REKLAMI (Yeni Eklenen) -->
+<script type='text/javascript' src='//pl30402446.effectivecpmnetwork.com/88/1b/76/881b76c8648981ee08c8c5a2ab504b98.js'></script>
+
+<!-- 4. POPUNDER REKLAMI (Yeni Eklenen) -->
+<script type='text/javascript' src='//pl30402445.effectivecpmnetwork.com/1a/d4/09/1ad40946cacd3a580bf4664e58ef16da.js'></script>
+<!-- =================================================================== -->
 
 <script>
 (function(){
-  const CURRENCIES = ["TRY","USD","EUR","GBP","RUB","CNY","JPY","AZN"];
+  const CURRENCIES = ["TRY","USD","EUR","GBP","RUB","CNY","JPY","AZN","CAD","AUD"];
   const fromSelect = document.getElementById('fromSelect');
   const toSelect = document.getElementById('toSelect');
   const amountInput = document.getElementById('amountInput');
   const resultValue = document.getElementById('resultValue');
   const swapBtn = document.getElementById('swapBtn');
   
-  // Seçenekleri doldur
+  // Diller Sözlüğü
+  const i18n = {
+    tr: { title: "Kur Akışı 💸", subtitle: "Anlık ve Hızlı Döviz Çevirici", err: "Hata" },
+    en: { title: "Currency Flow 💸", subtitle: "Instant & Fast Converter", err: "Error" }
+  };
+  let currentLang = "en"; // Varsayılan İngilizce
+
+  // Dropdownları doldur
   CURRENCIES.forEach(c => {
     fromSelect.innerHTML += `<option value="${c}">${c}</option>`;
     toSelect.innerHTML += `<option value="${c}">${c}</option>`;
   });
-  
-  // Varsayılan değerler
-  fromSelect.value = "USD";
-  toSelect.value = "TRY";
 
+  // 1. IP ve Ülke Algılama İşlemi
+  async function detectLocationAndLanguage() {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      
+      const userCountry = data.country_code; // Örn: "TR", "US", "DE"
+      const userCurrency = data.currency; // Örn: "TRY", "USD", "EUR"
+
+      // Eğer kullanıcı Türkiye'den giriyorsa Türkçe yap
+      if (userCountry === "TR") {
+        currentLang = "tr";
+        fromSelect.value = "USD"; // TR'dekiler genelde Dolar -> TL bakar
+        toSelect.value = "TRY";
+      } else {
+        // Yabancıysa İngilizce yap
+        currentLang = "en";
+        fromSelect.value = "USD";
+        // Kullanıcının ülkesinin para birimi listede varsa onu seç, yoksa EUR seç
+        if(CURRENCIES.includes(userCurrency)) {
+            toSelect.value = userCurrency;
+        } else {
+            toSelect.value = "EUR";
+        }
+      }
+
+      // Metinleri Güncelle
+      document.getElementById('html-lang').lang = currentLang;
+      document.getElementById('title-text').innerText = i18n[currentLang].title;
+      document.getElementById('page-title').innerText = i18n[currentLang].title;
+      document.getElementById('subtitle-text').innerText = i18n[currentLang].subtitle;
+      
+      convert(); // Dili algıladıktan sonra ilk hesabı yap
+    } catch(e) {
+      // API çalışmazsa varsayılan olarak TR ve USD->TRY aç
+      currentLang = "tr";
+      fromSelect.value = "USD";
+      toSelect.value = "TRY";
+      convert();
+    }
+  }
+
+  // 2. Çeviri Fonksiyonu (ExchangeRate-API)
   async function convert() {
     const val = parseFloat(amountInput.value);
     if (isNaN(val) || val <= 0) {
-      resultValue.innerText = "0,00";
+      resultValue.innerText = "0.00";
       return;
     }
 
     try {
-        // Son derece stabil ve CORS hatası vermeyen ExchangeRate-API kullanıyoruz
-        const res = await fetch('https://api.exchangerate-api.com/v4/latest/TRY');
-        if (!res.ok) throw new Error("API Bağlantı Hatası");
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        if (!res.ok) throw new Error("API Hata");
         const data = await res.json();
         
+        // USD tabanlı çapraz hesaplama
         const fromRate = data.rates[fromSelect.value];
         const toRate = data.rates[toSelect.value];
         
-        // TRY tabanından çapraz kur hesaplaması yapıyoruz
-        const amountInTry = val / fromRate;
-        const finalResult = amountInTry * toRate;
+        const amountInUsd = val / fromRate;
+        const finalResult = amountInUsd * toRate;
         
-        resultValue.innerText = Number(finalResult).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        resultValue.innerText = Number(finalResult).toLocaleString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('resultCode').innerText = toSelect.value;
     } catch(e) {
-        console.error(e);
-        resultValue.innerText = "Hata";
+        resultValue.innerText = i18n[currentLang].err;
     }
   }
   
-  // Değişiklikleri dinle
+  // Etkileşim Dinleyicileri
   [fromSelect, toSelect, amountInput].forEach(el => el.addEventListener('input', convert));
   
-  // Swap butonu işlevi
   swapBtn.addEventListener('click', () => {
     let temp = fromSelect.value;
     fromSelect.value = toSelect.value;
@@ -148,8 +258,8 @@
     convert();
   });
   
-  // Sayfa açıldığında ilk çeviriyi yap
-  convert();
+  // Sistemi Başlat
+  detectLocationAndLanguage();
 })();
 </script>
 </body>
